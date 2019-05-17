@@ -1721,7 +1721,11 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	if (target_pages > remaining_slots)
 		target_pages = remaining_slots;
 
-	/* If we don't want any pages from this tree, move on. */
+	if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "Target pages is %d.", target_pages);
+
+        /* If we don't want any pages from this tree, move on. */
 	if (target_pages == 0)
 		return (0);
 

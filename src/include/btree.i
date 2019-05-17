@@ -1402,12 +1402,22 @@ __wt_page_can_evict(WT_SESSION_IMPL *session, WT_REF *ref, bool *inmem_splitp)
 	mod = page->modify;
 
 	/* A truncated page can't be evicted until the truncate completes. */
-	if (__wt_page_del_active(session, ref, true))
+	if (__wt_page_del_active(session, ref, true)) {
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "A truncated page cannot be evicted until \
+			    the truncate completes.%s", "");
+
 		return (false);
+	}
 
 	/* Otherwise, never modified pages can always be evicted. */
-	if (mod == NULL)
+	if (mod == NULL) {
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+				     "The page can be evicted.%s", "");
 		return (true);
+	}
 
 	/*
 	 * We can't split or evict multiblock row-store pages where the parent's
@@ -1416,8 +1426,14 @@ __wt_page_can_evict(WT_SESSION_IMPL *session, WT_REF *ref, bool *inmem_splitp)
 	 * which will corrupt the checkpoint's block management.
 	 */
 	if (!__wt_btree_can_evict_dirty(session) &&
-	    F_ISSET_ATOMIC(ref->home, WT_PAGE_OVERFLOW_KEYS))
+	    F_ISSET_ATOMIC(ref->home, WT_PAGE_OVERFLOW_KEYS)) {
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER)) {
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "Can't evict multiblock row-store pages %s \
+			    where the parent's key is an overflow item.", "");
+		}
 		return (false);
+	}
 
 	/*
 	 * Check for in-memory splits before other eviction tests. If the page
@@ -1428,6 +1444,10 @@ __wt_page_can_evict(WT_SESSION_IMPL *session, WT_REF *ref, bool *inmem_splitp)
 	if (__wt_leaf_page_can_split(session, page)) {
 		if (inmem_splitp != NULL)
 			*inmem_splitp = true;
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+				     "The page can be evicted.%s", "");
+
 		return (true);
 	}
 
@@ -1442,6 +1462,11 @@ __wt_page_can_evict(WT_SESSION_IMPL *session, WT_REF *ref, bool *inmem_splitp)
 	if (modified && !__wt_btree_can_evict_dirty(session)) {
 		WT_STAT_CONN_INCR(session, cache_eviction_checkpoint);
 		WT_STAT_DATA_INCR(session, cache_eviction_checkpoint);
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER)) {
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "Can't evict a dirty page, because this %s \
+			    may create an inconsistent checkpoint.", "");
+		}
 		return (false);
 	}
 
@@ -1458,16 +1483,32 @@ __wt_page_can_evict(WT_SESSION_IMPL *session, WT_REF *ref, bool *inmem_splitp)
 	 */
 	if (WT_PAGE_IS_INTERNAL(page) &&
 	    !F_ISSET(session->dhandle, WT_DHANDLE_EXCLUSIVE) &&
-	    __wt_gen_active(session, WT_GEN_SPLIT, page->pg_intl_split_gen))
+	    __wt_gen_active(session, WT_GEN_SPLIT, page->pg_intl_split_gen)) {
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER)) {
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "Can't evict new internal pages created upon %s \
+			    a split, because other threads may have refs.", "");
+		}
 		return (false);
+	}
 
 	/*
 	 * If the page is clean but has modifications that appear too new to
 	 * evict, skip it.
 	 */
 	if (!modified && !__wt_txn_visible_all(session,
-	    mod->rec_max_txn, mod->rec_max_timestamp))
+	    mod->rec_max_txn, mod->rec_max_timestamp)) {
+		if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER)) {
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "The page has modifications that appear too \
+			    new to evict.%s", "");
+		}
 		return (false);
+	}
+
+	if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+		__wt_verbose(session, WT_VERB_EVICTSERVER,
+			     "The page can be evicted.%s", "");
 
 	return (true);
 }
