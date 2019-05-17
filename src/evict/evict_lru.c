@@ -1629,6 +1629,8 @@ __evict_walk_target(WT_SESSION_IMPL *session, u_int max_entries)
 		bytes_per_slot = 1 + cache_inuse / total_slots;
 		target_pages_clean = (uint32_t)(
 		    (btree_inuse + bytes_per_slot / 2) / bytes_per_slot);
+		__wt_verbose(session, WT_VERB_EVICTSERVER,
+		    "target pages clean: %u\n", target_pages_clean);
 	}
 
 	if (F_ISSET(cache, WT_CACHE_EVICT_DIRTY)) {
@@ -1721,7 +1723,7 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
 			__wt_verbose(session, WT_VERB_EVICTSERVER,
 			    "evict_walk_target: %u, \n \
-                            QUEUE_FILLS_PER_PASS: %u \n	\
+                            QUEUE_FILLS_PER_PASS: %d \n	\
                             btree->evict_walk_progress: %u \n	\
                             remaining_slots: %u\n",
 			    btree->evict_walk_target, QUEUE_FILLS_PER_PASS,
