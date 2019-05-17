@@ -1718,6 +1718,15 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	target_pages = WT_MIN(btree->evict_walk_target / QUEUE_FILLS_PER_PASS,
 	    btree->evict_walk_target - btree->evict_walk_progress);
 
+	if (WT_VERBOSE_ISSET(session, WT_VERB_EVICTSERVER))
+			__wt_verbose(session, WT_VERB_EVICTSERVER,
+			    "evict_walk_target: %u, \n \
+                            QUEUE_FILLS_PER_PASS: %u \n	\
+                            btree->evict_walk_progress: %u \n	\
+                            remaining_slots: %u\n",
+			    btree->evict_walk_target, QUEUE_FILLS_PER_PASS,
+			    btree->evict_walk_progress, remaining_slots);
+
 	if (target_pages > remaining_slots)
 		target_pages = remaining_slots;
 
