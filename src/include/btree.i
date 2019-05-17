@@ -101,6 +101,10 @@ __wt_btree_bytes_evictable(WT_SESSION_IMPL *session)
 	bytes_inmem = btree->bytes_inmem;
 	bytes_root = root_page == NULL ? 0 : root_page->memory_footprint;
 
+	__wt_verbose(session, WT_VERB_EVICTSERVER,
+		     "\n bytes_inmem: %" PRIu64 ", bytes_root: %" PRIu64 "\n",
+		     bytes_inmem, bytes_root);
+
 	return (bytes_inmem <= bytes_root ? 0 :
 	    __wt_cache_bytes_plus_overhead(cache, bytes_inmem - bytes_root));
 }
