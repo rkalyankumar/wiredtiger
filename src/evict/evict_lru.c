@@ -1630,7 +1630,10 @@ __evict_walk_target(WT_SESSION_IMPL *session, u_int max_entries)
 		target_pages_clean = (uint32_t)(
 		    (btree_inuse + bytes_per_slot / 2) / bytes_per_slot);
 		__wt_verbose(session, WT_VERB_EVICTSERVER,
-		    "target pages clean: %u\n", target_pages_clean);
+		    "target pages clean: %u\n", target_pages_clean,
+		    "btree_inuse: %u\n", btree_inuse,
+		    "cache_inuse: %u\n", cache_inuse,
+		    "bytes_per_slot: %u\n", bytes_per_slot);
 	}
 
 	if (F_ISSET(cache, WT_CACHE_EVICT_DIRTY)) {
