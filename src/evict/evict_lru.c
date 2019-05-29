@@ -1704,7 +1704,6 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	int restarts;
 	bool give_up, modified, urgent_queued;
 
-	WT_TRACK_OP_INIT(session);
 
 	conn = S2C(session);
 	btree = S2BT(session);
@@ -1797,6 +1796,8 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	walk_flags =
 	    WT_READ_CACHE | WT_READ_NO_EVICT | WT_READ_NO_GEN | WT_READ_NO_WAIT;
 
+	WT_TRACK_OP_INIT(session);
+
 	/*
 	 * Choose a random point in the tree if looking for candidates in a
 	 * tree with no starting point set. This is mostly aimed at ensuring
@@ -1820,7 +1821,7 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 			/* Ensure internal pages indexes remain valid */
 			WT_WITH_PAGE_INDEX(session, ret = __wt_random_descent(
 			    session, &btree->evict_ref, read_flags));
-			WT_RET_NOTFOUND_OK(ret);
+			WT_RET_TRACK_NOTFOUND_OK(ret);
 		}
 		break;
 	}
