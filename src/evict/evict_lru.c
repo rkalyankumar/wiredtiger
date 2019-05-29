@@ -1698,10 +1698,13 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 	WT_EVICT_ENTRY *end, *evict, *start;
 	WT_PAGE *last_parent, *page;
 	WT_REF *ref;
+	WT_TRACK_OP_DECL;
 	uint64_t min_pages, pages_seen, pages_queued, refs_walked;
 	uint32_t read_flags, remaining_slots, target_pages, walk_flags;
 	int restarts;
 	bool give_up, modified, urgent_queued;
+
+	WT_TRACK_OP_INIT(session);
 
 	conn = S2C(session);
 	btree = S2BT(session);
@@ -1741,8 +1744,10 @@ __evict_walk_tree(WT_SESSION_IMPL *session,
 			    "Target pages is %u.", target_pages);
 
         /* If we don't want any pages from this tree, move on. */
-	if (target_pages == 0)
+	if (target_pages == 0) {
+		WT_TRACK_OP_END(session);
 		return (0);
+	}
 
 	/*
 	 * These statistics generate a histogram of the number of pages targeted
@@ -2037,7 +2042,7 @@ fast:		/* If the page can't be evicted, give up. */
 		    "select: %p, size %" WT_SIZET_FMT,
 		    (void *)page, page->memory_footprint);
 	}
-	WT_RET_NOTFOUND_OK(ret);
+	WT_RET_TRACK_NOTFOUND_OK(ret);
 
 	*slotp += (u_int)(evict - start);
 	WT_STAT_CONN_INCRV(
@@ -2081,7 +2086,7 @@ fast:		/* If the page can't be evicted, give up. */
 			if (restarts == 0)
 				WT_STAT_CONN_INCR(
 				    session, cache_eviction_walks_abandoned);
-			WT_RET(__wt_page_release(
+			WT_RET_TRACK(__wt_page_release(
 			    cache->walk_session, ref, walk_flags));
 			ref = NULL;
 		} else
@@ -2098,6 +2103,7 @@ fast:		/* If the page can't be evicted, give up. */
 	WT_STAT_CONN_INCRV(session, cache_eviction_walk_passes, 1);
 	WT_STAT_DATA_INCRV(session, cache_eviction_walk_passes, 1);
 
+	WT_TRACK_OP_END(session);
 	return (0);
 }
 
