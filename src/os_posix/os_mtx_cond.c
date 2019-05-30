@@ -204,6 +204,8 @@ __wt_cond_destroy(WT_SESSION_IMPL *session, WT_CONDVAR **condp)
 		WT_PANIC_MSG(
 		    session, ret, "pthread_cond_destroy: %s", cond->name);
 
+	WT_ASSERT(session, cond->mtx.__data.__nusers == 0);
+
 	if ((ret = pthread_mutex_destroy(&cond->mtx)) != 0)
 		WT_PANIC_MSG(
 		    session, ret, "pthread_mutex_destroy: %s", cond->name);
