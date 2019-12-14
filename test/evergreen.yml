@@ -151,14 +151,15 @@ functions:
         set -o errexit
         set -o verbose
         ${test_env_vars|} ./t ${thread_test_args|}
-  "random abort test":
-    command: shell.exec
-    parms:
-      working_dir: "wiredtiger/build_posix/test/csuite"
-      script: |
-        set -o errexit
-        set -o verbose
-        ${test_env_vars|} ./test_random_abort ${random_abort_args|}
+  # Temporarily disabled
+  # "random abort test":
+  #   command: shell.exec
+  #   parms:
+  #     working_dir: "wiredtiger/build_posix/test/csuite"
+  #     script: |
+  #       set -o errexit
+  #       set -o verbose
+  #       ${test_env_vars|} ./test_random_abort ${random_abort_args|}
   "upload artifact":
     - command: archive.targz_pack
       params:
@@ -556,20 +557,21 @@ tasks:
 
   #           ${test_env_vars|} $(pwd)/../test/csuite/import/smoke.sh 2>&1
 
-  - name: csuite-random-abort-test
-    tags: ["pull_request"]
-    depends_on:
-      - name: compile
-    commands:
-      - func: "fetch artifacts"
-      - command: shell.exec
-        params:
-          working_dir: "wiredtiger/build_posix"
-          script: |
-            set -o errexit
-            set -o verbose
+  # Temporarily disabled
+  # - name: csuite-random-abort-test
+  #   tags: ["pull_request"]
+  #   depends_on:
+  #     - name: compile
+  #   commands:
+  #     - func: "fetch artifacts"
+  #     - command: shell.exec
+  #       params:
+  #         working_dir: "wiredtiger/build_posix"
+  #         script: |
+  #           set -o errexit
+  #           set -o verbose
 
-            ${test_env_vars|} $(pwd)/../test/csuite/random_abort/smoke.sh 2>&1
+  #           ${test_env_vars|} $(pwd)/../test/csuite/random_abort/smoke.sh 2>&1
 
   - name: csuite-random-directio-test
     tags: ["pull_request"]
@@ -738,20 +740,21 @@ tasks:
 
             ${test_env_vars|} $(pwd)/test/csuite/test_wt2719_reconfig 2>&1
 
-  - name: csuite-wt2999-join-extractor-test
-    tags: ["pull_request"]
-    depends_on:
-      - name: compile
-    commands:
-      - func: "fetch artifacts"
-      - command: shell.exec
-        params:
-          working_dir: "wiredtiger/build_posix"
-          script: |
-            set -o errexit
-            set -o verbose
+  # Temporarily disabled
+  # - name: csuite-wt2999-join-extractor-test
+  #   tags: ["pull_request"]
+  #   depends_on:
+  #     - name: compile
+  #   commands:
+  #     - func: "fetch artifacts"
+  #     - command: shell.exec
+  #       params:
+  #         working_dir: "wiredtiger/build_posix"
+  #         script: |
+  #           set -o errexit
+  #           set -o verbose
 
-            ${test_env_vars|} $(pwd)/test/csuite/test_wt2999_join_extractor 2>&1
+  #           ${test_env_vars|} $(pwd)/test/csuite/test_wt2999_join_extractor 2>&1
 
   - name: csuite-wt3120-filesys-test
     tags: ["pull_request"]
@@ -948,20 +951,21 @@ tasks:
 
             ${test_env_vars|} $(pwd)/test/csuite/test_wt2246_col_append 2>&1
 
-  - name: csuite-wt2323-join-visibility-test
-    tags: ["pull_request"]
-    depends_on:
-      - name: compile
-    commands:
-      - func: "fetch artifacts"
-      - command: shell.exec
-        params:
-          working_dir: "wiredtiger/build_posix"
-          script: |
-            set -o errexit
-            set -o verbose
+  # Temporarily disabled
+  # - name: csuite-wt2323-join-visibility-test
+  #   tags: ["pull_request"]
+  #   depends_on:
+  #     - name: compile
+  #   commands:
+  #     - func: "fetch artifacts"
+  #     - command: shell.exec
+  #       params:
+  #         working_dir: "wiredtiger/build_posix"
+  #         script: |
+  #           set -o errexit
+  #           set -o verbose
 
-            ${test_env_vars|} $(pwd)/test/csuite/test_wt2323_join_visibility 2>&1
+  #           ${test_env_vars|} $(pwd)/test/csuite/test_wt2323_join_visibility 2>&1
 
   - name: csuite-wt2535-insert-race-test
     tags: ["pull_request"]
@@ -993,20 +997,21 @@ tasks:
 
             ${test_env_vars|} $(pwd)/test/csuite/test_wt2834_join_bloom_fix 2>&1
 
-  - name: csuite-wt2853-perf-test
-    tags: ["pull_request"]
-    depends_on:
-      - name: compile
-    commands:
-      - func: "fetch artifacts"
-      - command: shell.exec
-        params:
-          working_dir: "wiredtiger/build_posix"
-          script: |
-            set -o errexit
-            set -o verbose
+  # Temporarily disabled
+  # - name: csuite-wt2853-perf-test
+  #   tags: ["pull_request"]
+  #   depends_on:
+  #     - name: compile
+  #   commands:
+  #     - func: "fetch artifacts"
+  #     - command: shell.exec
+  #       params:
+  #         working_dir: "wiredtiger/build_posix"
+  #         script: |
+  #           set -o errexit
+  #           set -o verbose
 
-            ${test_env_vars|} $(pwd)/test/csuite/test_wt2853_perf 2>&1
+  #           ${test_env_vars|} $(pwd)/test/csuite/test_wt2853_perf 2>&1
 
   - name: csuite-wt2909-checkpoint-integrity-test
     tags: ["pull_request"]
@@ -1693,7 +1698,7 @@ tasks:
           script: |
             set -o errexit
             set -o verbose
-            ${test_env_vars|} $(pwd)/../test/csuite/random_abort/smoke.sh 2>&1
+            # ${test_env_vars|} $(pwd)/../test/csuite/random_abort/smoke.sh 2>&1
             ${test_env_vars|} $(pwd)/../test/csuite/timestamp_abort/smoke.sh 2>&1
             ${test_env_vars|} $(pwd)/test/csuite/test_truncated_log 2>&1
 
@@ -1755,16 +1760,17 @@ tasks:
         vars:
           thread_test_args: -S -F -n 100000 -t v
 
-      # random-abort - default (random time and number of threads)
-      - func: "random abort test"
-      # random-abort - minimum time, random number of threads
-      - func: "random abort test"
-        vars:
-          random_abort_args: -t 10
-      # random-abort - maximum time, random number of threads
-      - func: "random abort test"
-        vars:
-          random_abort_args: -t 40
+      # Temporarily disabled
+      # # random-abort - default (random time and number of threads)
+      # - func: "random abort test"
+      # # random-abort - minimum time, random number of threads
+      # - func: "random abort test"
+      #   vars:
+      #     random_abort_args: -t 10
+      # # random-abort - maximum time, random number of threads
+      # - func: "random abort test"
+      #   vars:
+      #     random_abort_args: -t 40
 
       # truncated-log
       - command: shell.exec
