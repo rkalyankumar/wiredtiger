@@ -3,9 +3,10 @@ LDADD += $(top_builddir)/libwiredtiger.la
 AM_CPPFLAGS = -I$(top_srcdir)/src/include
 AM_CPPFLAGS +=-I$(top_srcdir)/test/utility
 
+# Temporarily disabled
+# ex_all
 noinst_PROGRAMS = \
 	ex_access \
-	ex_all \
 	ex_async \
 	ex_backup \
 	ex_call_center \
