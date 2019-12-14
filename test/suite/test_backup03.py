@@ -26,7 +26,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import glob, os, shutil, string
+import glob, os, shutil, string, unittest
 import wiredtiger, wttest
 from helper import compare_files
 from suite_subprocess import suite_subprocess
@@ -148,6 +148,7 @@ class test_backup_target(wttest.WiredTigerTestCase, suite_subprocess):
                     self.confirmPathDoesNotExist(self.objs[i][0])
 
     # Test backup with targets.
+    @unittest.skip("Temporarily disabled")
     def test_backup_target(self):
         self.populate()
         self.backup_table_cursor(self.list)

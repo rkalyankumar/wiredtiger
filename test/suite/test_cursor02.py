@@ -26,7 +26,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import wiredtiger
+import unittest, wiredtiger
 from test_cursor_tracker import TestCursorTracker
 from wtscenario import make_scenarios
 
@@ -62,6 +62,7 @@ class test_cursor02(TestCursorTracker):
         self.cur_initial_conditions(self.table_name1, ninitialentries, self.tablekind, None, None, self.uri)
         return self.session.open_cursor(tablearg, None, 'append')
 
+    @unittest.skip("Temporarily disabled")
     def test_multiple_remove(self):
         """
         Test multiple deletes at the same place
@@ -82,6 +83,7 @@ class test_cursor02(TestCursorTracker):
         #self.cur_dump_here(cursor, 'after second next: ')
         cursor.close()
 
+    @unittest.skip("Temporarily removed")
     def test_insert_and_remove(self):
         """
         Test a variety of insert, deletes and iteration

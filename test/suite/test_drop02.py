@@ -26,7 +26,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import wiredtiger, wttest
+import unittest, wiredtiger, wttest
 from wtdataset import SimpleDataSet
 
 # test_drop02.py
@@ -36,6 +36,7 @@ class test_drop02(wttest.WiredTigerTestCase):
     name = 'test_drop02'
 
     # Populate an object, remove it and confirm it no longer exists.
+    @unittest.skip("Temporarily disabled")
     def test_drop(self):
         uri = 'lsm:' + self.name
         ds = SimpleDataSet(self, uri, 100000)

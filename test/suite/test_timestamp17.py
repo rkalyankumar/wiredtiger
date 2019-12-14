@@ -33,7 +33,7 @@
 #   moved.
 #
 
-import random
+import random, unittest
 from suite_subprocess import suite_subprocess
 import wiredtiger, wttest
 from wtscenario import make_scenarios
@@ -46,6 +46,7 @@ class test_timestamp17(wttest.WiredTigerTestCase, suite_subprocess):
     uri = 'table:' + tablename
     session_config = 'isolation=snapshot'
 
+    @unittest.skip("Temporarily disabled")
     def test_inconsistent_timestamping(self):
         self.session.create(self.uri, 'key_format=i,value_format=i')
         self.session.begin_transaction()

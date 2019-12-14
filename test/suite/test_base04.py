@@ -26,7 +26,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import wiredtiger, wttest
+import unittest, wiredtiger, wttest
 
 # test_base04.py
 #    Test that tables are reconciled correctly when they are empty.
@@ -83,6 +83,7 @@ class test_base04(wttest.WiredTigerTestCase):
         self.check_exists('somekey', wiredtiger.WT_NOTFOUND)
         self.drop_table()
 
+    @unittest.skip("Temporarily disabled")
     def test_insert(self):
         '''Create a table, add a key, get it back'''
         for self.reconcile in (False, True):

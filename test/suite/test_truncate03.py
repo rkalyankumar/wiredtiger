@@ -29,7 +29,7 @@
 # test_truncate03.py
 #       session level operations on tables
 
-import wiredtiger, wttest
+import unittest, wiredtiger, wttest
 from wtdataset import SimpleDataSet
 
 # A standalone test case that exercises address-deleted cells.
@@ -92,6 +92,7 @@ class test_truncate_address_deleted(wttest.WiredTigerTestCase):
 
     # Test object creation, recovery, and conversion of address-deleted cells
     # into free pages.
+    @unittest.skip("Temporarily disabled")
     def test_truncate_address_deleted_free(self):
         # Create the object on disk.
         ds = self.address_deleted()
@@ -102,6 +103,7 @@ class test_truncate_address_deleted(wttest.WiredTigerTestCase):
     # Test object creation, recovery, and conversion of address-deleted cells
     # into free pages, but instead of verifying the final object, instantiate
     # empty pages by a reader after the underlying leaf pages are removed.
+    @unittest.skip("Temporarily disabled")
     def test_truncate_address_deleted_empty_page(self):
         # Create the object on disk.
         ds = self.address_deleted()

@@ -26,7 +26,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import os
+import os, unittest
 from suite_subprocess import suite_subprocess
 import wiredtiger, wttest
 
@@ -36,6 +36,7 @@ class test_util14(wttest.WiredTigerTestCase, suite_subprocess):
     tablename = 'test_util14.a'
     nentries = 1000
 
+    @unittest.skip("Temporarily disabled")
     def test_truncate_process(self):
         """
         Test truncate in a 'wt' process

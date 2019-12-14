@@ -29,7 +29,7 @@
 # test_bug004.py
 #       Regression tests.
 
-import wiredtiger, wttest
+import unittest, wiredtiger, wttest
 from wtdataset import SimpleDataSet, simple_key, simple_value
 
 # Check to make sure we see the right versions of overflow keys and values
@@ -45,6 +45,7 @@ class test_bug004(wttest.WiredTigerTestCase):
 
     nentries = 30
 
+    @unittest.skip("Temporarily disabled")
     def test_bug004(self):
         # Create the object, fill with overflow keys and values.
         self.session.create(self.uri, self.config)

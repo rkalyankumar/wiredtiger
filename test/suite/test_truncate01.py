@@ -30,7 +30,7 @@
 #       session level operations on tables
 #
 
-import wiredtiger, wttest
+import unittest, wiredtiger, wttest
 from helper import confirm_empty
 from wtdataset import SimpleDataSet, ComplexDataSet, simple_key
 from wtscenario import make_scenarios
@@ -286,6 +286,7 @@ class test_truncate_cursor(wttest.WiredTigerTestCase):
         cursor.close()
 
     # Test truncation of files and simple tables using cursors.
+    @unittest.skip("Temporarily disabled")
     def test_truncate_simple(self):
         uri = self.type + self.name
 
@@ -429,6 +430,7 @@ class test_truncate_cursor(wttest.WiredTigerTestCase):
     # Test truncation of complex tables using cursors.  We can't do the kind of
     # layout and detailed testing as we can with files, but this will at least
     # smoke-test the handling of indexes and column-groups.
+    @unittest.skip("Temporarily disabled")
     def test_truncate_complex(self):
 
         # We only care about tables.
