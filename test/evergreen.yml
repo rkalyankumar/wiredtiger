@@ -145,6 +145,48 @@ functions:
         set -o verbose
 
         ${test_env_vars|} ${make_command|make} VERBOSE=1 check ${smp_command|} 2>&1
+
+  ### Process & archive artifacts from hung processes ###
+  "run hang analyzer":
+    command: shell.exec
+    params:
+      working_dir: wiredtiger/test/evergreen
+      script: |
+        set -o errexit
+        set -o verbose
+        hang_analyzer_opts="-o file -o stdout -m exact -p ${hang_analyzer_procs|t}"
+        if [ ${hang_analyzer_dump_core|true} = true ]; then
+          hang_analyzer_opts="-c $hang_analyzer_opts"
+        fi
+
+        echo "Invoking hang_analyzer.py: PATH=\"/opt/mongodbtoolchain/gdb/bin:$PATH\" $python buildscripts/hang_analyzer.py $hang_analyzer_opts"
+        PATH="/opt/mongodbtoolchain/gdb/bin:$PATH" $python buildscripts/hang_analyzer.py $hang_analyzer_opts
+
+  "tar hang analyzer debugger files": &tar_hang_analyzer_debugger_files
+    command: archive.targz_pack
+    params:
+      target: "wiredtiger/test/evergreen/mongo-hanganalyzer.tgz"
+      source_dir: "wiredtiger/test/evergreen"
+      include:
+        - "./debugger*.*"
+
+  "archive hang analyzer debugger files": &archive_hang_analyzer_debugger_files
+    command: s3.put
+    params:
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
+      local_file: wiredtiger/test/evergreen/mongo-hanganalyzer.tgz
+      remote_file: ${project}/${build_variant}/${revision}/hanganalyzer/mongo-hanganalyzer-${build_id}-${task_name}-${execution}.tgz
+      bucket: mciuploads
+      permissions: public-read
+      content_type: ${content_type|application/gzip}
+      display_name: Hang Analyzer Output - Execution ${execution}
+      optional: true
+
+  "save hang analyzer debugger files":
+  - *tar_hang_analyzer_debugger_files
+  - *archive_hang_analyzer_debugger_files
+
   "unit test":
     command: shell.exec
     params:
@@ -300,11 +342,19 @@ functions:
           done
         done
 
+# Pre task steps
 pre:
   - func: "cleanup"
+
+# Post task steps
 post:
   - func: "upload artifact"
   - func: "cleanup"
+  - func: "save hang analyzer debugger files"
+
+# Timeout steps
+timeout:
+  - func: "run hang analyzer"
 
 tasks:
   # Base compile task on posix flavours
@@ -1649,6 +1699,22 @@ tasks:
           times: 3
           config: ../../../test/format/CONFIG.stress
           extra_args: -C "direct_io=[data]"
+
+  - name: tammy-linux-directio
+    exec_timeout_secs: 900
+    depends_on:
+    - name: compile
+    commands:
+      - func: "fetch artifacts"
+      - func: "compile wiredtiger"
+      - command: shell.exec
+        timeout_secs: 600
+        params:
+          working_dir: "wiredtiger/build_posix/test/format"
+          script: |
+            set -o errexit
+            set -o verbose
+            ./t -C "direct_io=[data]" -c ../../../test/format/CONFIG.stress
 
   - name: format-linux-no-ftruncate
     depends_on:
