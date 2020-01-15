@@ -159,8 +159,8 @@ functions:
           hang_analyzer_opts="-c $hang_analyzer_opts"
         fi
 
-        echo "Invoking hang_analyzer.py: PATH=\"/opt/mongodbtoolchain/gdb/bin:$PATH\" $python buildscripts/hang_analyzer.py $hang_analyzer_opts"
-        PATH="/opt/mongodbtoolchain/gdb/bin:$PATH" $python buildscripts/hang_analyzer.py $hang_analyzer_opts
+        echo "Invoking hang_analyzer.py: PATH=\"/opt/mongodbtoolchain/gdb/bin:$PATH\" sudo ./buildscripts/hang_analyzer.py $hang_analyzer_opts"
+        PATH="/opt/mongodbtoolchain/gdb/bin:$PATH" sudo ./buildscripts/hang_analyzer.py $hang_analyzer_opts
 
   "tar hang analyzer debugger files": &tar_hang_analyzer_debugger_files
     command: archive.targz_pack
