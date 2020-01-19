@@ -1700,22 +1700,6 @@ tasks:
           config: ../../../test/format/CONFIG.stress
           extra_args: -C "direct_io=[data]"
 
-  - name: tammy-linux-directio
-    exec_timeout_secs: 900
-    depends_on:
-    - name: compile
-    commands:
-      - func: "fetch artifacts"
-      - func: "compile wiredtiger"
-      - command: shell.exec
-        timeout_secs: 600
-        params:
-          working_dir: "wiredtiger/build_posix/test/format"
-          script: |
-            set -o errexit
-            set -o verbose
-            ./t -C "direct_io=[data]" -c ../../../test/format/CONFIG.stress
-
   - name: format-linux-no-ftruncate
     depends_on:
     - name: compile-linux-no-ftruncate
