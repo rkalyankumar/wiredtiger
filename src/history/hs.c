@@ -499,24 +499,19 @@ __wt_hs_insert_updates(WT_CURSOR *cursor, WT_BTREE *btree, WT_PAGE *page, WT_MUL
     uint32_t btree_id, i;
     uint8_t *p;
     int nentries;
-    bool local_txn, squashed;
+    bool squashed;
 
     prev_upd = NULL;
     session = (WT_SESSION_IMPL *)cursor->session;
     saved_isolation = 0; /*[-Wconditional-uninitialized] */
     insert_cnt = 0;
     btree_id = btree->id;
-    local_txn = false;
-    __wt_modify_vector_init(session, &modifies);
 
-    if (!btree->hs_entries)
-        btree->hs_entries = true;
+    __wt_modify_vector_init(session, &modifies);
 
     /* Wrap all the updates in a transaction. */
     WT_ERR(__wt_txn_begin(session, NULL));
     __hs_set_isolation(session, &saved_isolation);
-
-    local_txn = true;
 
     /* Ensure enough room for a column-store key without checking. */
     WT_ERR(__wt_scr_alloc(session, WT_INTPACK64_MAXSIZE, &key));
@@ -742,16 +737,15 @@ __wt_hs_insert_updates(WT_CURSOR *cursor, WT_BTREE *btree, WT_PAGE *page, WT_MUL
 
 err:
     /* Resolve the transaction. */
-    if (local_txn) {
-        if (ret == 0)
-            ret = __wt_txn_commit(session, NULL);
-        else
-            WT_TRET(__wt_txn_rollback(session, NULL));
-        __hs_restore_isolation(session, saved_isolation);
-        F_CLR(cursor, WT_CURSTD_UPDATE_LOCAL);
-    }
+    if (ret == 0) {
+        if (insert_cnt > 0)
+            F_SET(btree, WT_BTREE_HAS_HS_ENTRIES);
+        ret = __wt_txn_commit(session, NULL);
+    } else
+        WT_TRET(__wt_txn_rollback(session, NULL));
 
     __hs_restore_isolation(session, saved_isolation);
+    F_CLR(cursor, WT_CURSTD_UPDATE_LOCAL);
 
     if (ret == 0 && insert_cnt > 0)
         __hs_insert_updates_verbose(session, btree);

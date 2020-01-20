@@ -814,7 +814,8 @@ __wt_txn_read(WT_SESSION_IMPL *session, WT_CURSOR_BTREE *cbt, WT_UPDATE *upd, WT
 
     /* If there's no visible update in the update chain or ondisk, check the history store file. */
     WT_ASSERT(session, upd == NULL);
-    if (F_ISSET(S2C(session), WT_CONN_HS_OPEN) && !F_ISSET(S2BT(session), WT_BTREE_HS))
+    if (F_ISSET(S2C(session), WT_CONN_HS_OPEN) && !F_ISSET(S2BT(session), WT_BTREE_HS) &&
+      F_ISSET(S2BT(session), WT_BTREE_HAS_HS_ENTRIES))
         WT_RET_NOTFOUND_OK(__wt_find_hs_upd(session, cbt, &upd, false));
 
     /* There is no BIRTHMARK in the history store file. */
