@@ -154,7 +154,7 @@ __wt_rec_upd_select(WT_SESSION_IMPL *session, WT_RECONCILE *r, WT_INSERT *ins, v
     WT_PAGE *page;
     WT_UPDATE *first_stable_upd, *first_txn_upd, *first_upd, *orig_upd, *upd;
     wt_timestamp_t max_ts;
-    size_t size, upd_memsize;
+    size_t upd_memsize;
     uint64_t max_txn, txnid;
     bool all_stable, list_prepared, list_uncommitted;
 
@@ -300,6 +300,19 @@ __wt_rec_upd_select(WT_SESSION_IMPL *session, WT_RECONCILE *r, WT_INSERT *ins, v
         upd_select->start_txn = WT_TXN_NONE;
         upd_select->stop_ts = WT_TS_MAX;
         upd_select->stop_txn = WT_TXN_MAX;
+        if (upd_select->upd->start_ts != WT_TS_NONE)
+            upd_select->durable_ts = upd_select->start_ts = upd_select->upd->start_ts;
+        if (upd_select->upd->txnid != WT_TXN_NONE)
+            upd_select->start_txn = upd_select->upd->txnid;
+
+        if ((upd_select->stop_ts == WT_TS_MAX && upd_select->stop_txn == WT_TXN_MAX) &&
+          ((upd_select->start_ts == WT_TS_NONE && upd_select->start_txn == WT_TXN_NONE) ||
+              __wt_txn_visible_all(session, upd_select->start_txn, upd_select->start_ts))) {
+            upd_select->start_ts = WT_TS_NONE;
+            upd_select->start_txn = WT_TXN_NONE;
+            upd_select->stop_ts = WT_TS_MAX;
+            upd_select->stop_txn = WT_TXN_MAX;
+        }
         /*
          * If the newest is a tombstone then select the update before it and set the end of the
          * visibility window to its time pair as appropriate to indicate that we should return "not
@@ -308,58 +321,68 @@ __wt_rec_upd_select(WT_SESSION_IMPL *session, WT_RECONCILE *r, WT_INSERT *ins, v
          * Otherwise, leave the end of the visibility window at the maximum possible value to
          * indicate that the value is visible to any timestamp/transaction id ahead of it.
          */
-        if (upd->type == WT_UPDATE_TOMBSTONE) {
-            if (upd->start_ts != WT_TS_NONE)
-                upd_select->stop_ts = upd->start_ts;
-            if (upd->txnid != WT_TXN_NONE)
-                upd_select->stop_txn = upd->txnid;
-            upd_select->upd = upd = upd->next;
-        }
-        if (upd != NULL) {
-            /* The beginning of the validity window is the selected update's time pair. */
-            if (upd->start_ts < upd_select->stop_ts)
-                upd_select->durable_ts = upd_select->start_ts = upd->start_ts;
-            if (upd->txnid < upd_select->stop_txn)
-                upd_select->start_txn = upd->txnid;
-        } else {
-            /* If we only have a tombstone in the update list, we must have an ondisk value. */
-            WT_ASSERT(session, vpack != NULL);
-            /*
-             * It's possible to have a tombstone as the only update in the update list. If we
-             * reconciled before with only a single update and then read the page back into cache,
-             * we'll have an empty update list. And applying a delete on top of that will result in
-             * ONLY a tombstone in the update list.
-             *
-             * In this case, we should leave the selected update unset to indicate that we want to
-             * keep the same on-disk value but set the stop time pair to indicate that the validity
-             * window ends when this tombstone started.
-             *
-             * FIXME-PM-1521: Any workload/test that involves reopening a connection or opening a
-             * connection on an existing database will run into issues with the logic below. When
-             * opening a connection, the transaction id allocations are reset and therefore, on-disk
-             * values that were previously written can have later timestamps/transaction ids than
-             * new updates being applied which can lead to a malformed cell (stop time pair earlier
-             * than start time pair). I've added some checks below to guard against malformed cells
-             * but this logic still isn't correct and should be handled properly when we begin the
-             * recovery work.
-             */
-            if (vpack->start_ts < upd_select->stop_ts)
-                upd_select->durable_ts = upd_select->start_ts = vpack->start_ts;
-            if (vpack->start_txn < upd_select->stop_txn)
-                upd_select->start_txn = vpack->start_txn;
-            /*
-             * Leaving the update unset means that we can skip reconciling. If we've set the stop
-             * time pair because of a tombstone after the on-disk value, we still have work to do so
-             * that is NOT ok. Let's allocate an update equivalent to the on-disk value and continue
-             * on our way!
-             */
-            WT_ERR(__wt_scr_alloc(session, 0, &tmp));
-            WT_ERR(__wt_page_cell_data_ref(session, page, vpack, tmp));
-            WT_ERR(__wt_update_alloc(session, tmp, &upd, &size, WT_UPDATE_STANDARD));
-            upd->ext = 1;
-            upd_select->upd = upd;
-        }
-        WT_ASSERT(session, upd == NULL || upd->type != WT_UPDATE_TOMBSTONE);
+        // if (upd->type == WT_UPDATE_TOMBSTONE) {
+        //     if (upd->start_ts != WT_TS_NONE)
+        //         upd_select->stop_ts = upd->start_ts;
+        //     if (upd->txnid != WT_TXN_NONE)
+        //         upd_select->stop_txn = upd->txnid;
+        //     upd_select->upd = upd = upd->next;
+        // }
+        // if (upd != NULL) {
+        //     /* The beginning of the validity window is the selected update's time pair. */
+        //     if (upd->start_ts < upd_select->stop_ts)
+        //         upd_select->durable_ts = upd_select->start_ts = upd->start_ts;
+        //     if (upd->txnid < upd_select->stop_txn)
+        //         upd_select->start_txn = upd->txnid;
+        // } else {
+        //     /* If we only have a tombstone in the update list, we must have an ondisk value. */
+        //     WT_ASSERT(session, vpack != NULL);
+        //     /*
+        //      * It's possible to have a tombstone as the only update in the update list. If we
+        //      * reconciled before with only a single update and then read the page back into
+        //      cache,
+        //      * we'll have an empty update list. And applying a delete on top of that will result
+        //      in
+        //      * ONLY a tombstone in the update list.
+        //      *
+        //      * In this case, we should leave the selected update unset to indicate that we want
+        //      to
+        //      * keep the same on-disk value but set the stop time pair to indicate that the
+        //      validity
+        //      * window ends when this tombstone started.
+        //      *
+        //      * FIXME-PM-1521: Any workload/test that involves reopening a connection or opening a
+        //      * connection on an existing database will run into issues with the logic below. When
+        //      * opening a connection, the transaction id allocations are reset and therefore,
+        //      on-disk
+        //      * values that were previously written can have later timestamps/transaction ids than
+        //      * new updates being applied which can lead to a malformed cell (stop time pair
+        //      earlier
+        //      * than start time pair). I've added some checks below to guard against malformed
+        //      cells
+        //      * but this logic still isn't correct and should be handled properly when we begin
+        //      the
+        //      * recovery work.
+        //      */
+        //     if (vpack->start_ts < upd_select->stop_ts)
+        //         upd_select->durable_ts = upd_select->start_ts = vpack->start_ts;
+        //     if (vpack->start_txn < upd_select->stop_txn)
+        //         upd_select->start_txn = vpack->start_txn;
+        //     /*
+        //      * Leaving the update unset means that we can skip reconciling. If we've set the stop
+        //      * time pair because of a tombstone after the on-disk value, we still have work to do
+        //      so
+        //      * that is NOT ok. Let's allocate an update equivalent to the on-disk value and
+        //      continue
+        //      * on our way!
+        //      */
+        //     WT_ERR(__wt_scr_alloc(session, 0, &tmp));
+        //     WT_ERR(__wt_page_cell_data_ref(session, page, vpack, tmp));
+        //     WT_ERR(__wt_update_alloc(session, tmp, &upd, &size, WT_UPDATE_STANDARD));
+        //     upd->ext = 1;
+        //     upd_select->upd = upd;
+        // }
+        // WT_ASSERT(session, upd == NULL || upd->type != WT_UPDATE_TOMBSTONE);
     }
 
     /*
