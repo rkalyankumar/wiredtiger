@@ -149,6 +149,9 @@ __wt_cache_page_inmem_incr(WT_SESSION_IMPL *session, WT_PAGE *page, size_t size)
     btree = S2BT(session);
     cache = S2C(session)->cache;
 
+    if (size == 0)
+        return;
+
     (void)__wt_atomic_add64(&btree->bytes_inmem, size);
     (void)__wt_atomic_add64(&cache->bytes_inmem, size);
     (void)__wt_atomic_addsize(&page->memory_footprint, size);
@@ -468,8 +471,6 @@ static inline void
 __wt_page_only_modify_set(WT_SESSION_IMPL *session, WT_PAGE *page)
 {
     uint64_t last_running;
-
-    WT_ASSERT(session, !F_ISSET(session->dhandle, WT_DHANDLE_DEAD));
 
     last_running = 0;
     if (page->modify->page_state == WT_PAGE_CLEAN)
@@ -838,6 +839,10 @@ __wt_row_leaf_key_info(
             *ikeyp = NULL;
         if (cellp != NULL)
             *cellp = WT_PAGE_REF_OFFSET(page, WT_CELL_DECODE_OFFSET(v));
+        if (datap != NULL) {
+            *(void **)datap = NULL;
+            *sizep = 0;
+        }
         return (false);
     case WT_K_FLAG:
         /* Encoded key: no instantiated key, no cell. */
@@ -995,9 +1000,6 @@ __wt_row_leaf_value_cell(WT_SESSION_IMPL *session, WT_PAGE *page, WT_ROW *rip,
     size_t size;
     void *copy, *key;
 
-    size = 0;   /* -Werror=maybe-uninitialized */
-    key = NULL; /* -Werror=maybe-uninitialized */
-
     /* If we already have an unpacked key cell, use it. */
     if (kpack != NULL)
         vcell = (WT_CELL *)((uint8_t *)kpack->cell + __wt_cell_total_len(kpack));
@@ -1102,6 +1104,25 @@ __wt_ref_info(
 }
 
 /*
+ * __wt_ref_is_leaf --
+ *     Check if a reference is for a leaf page.
+ */
+static inline bool
+__wt_ref_is_leaf(WT_SESSION_IMPL *session, WT_REF *ref)
+{
+    size_t addr_size;
+    const uint8_t *addr;
+    u_int type;
+
+    /*
+     * If the page has a disk address, we can crack it to figure out if this page is a leaf page or
+     * not. If there's no address, the page isn't on disk and we don't know the page type.
+     */
+    __wt_ref_info(session, ref, &addr, &addr_size, &type);
+    return (addr == NULL ? false : type == WT_CELL_ADDR_LEAF || type == WT_CELL_ADDR_LEAF_NO);
+}
+
+/*
  * __wt_ref_block_free --
  *     Free the on-disk block for a reference and clear the address.
  */
@@ -1153,8 +1174,6 @@ __wt_page_las_active(WT_SESSION_IMPL *session, WT_REF *ref)
     WT_PAGE_LOOKASIDE *page_las;
 
     if ((page_las = ref->page_las) == NULL)
-        return (false);
-    if (page_las->resolved)
         return (false);
     if (page_las->min_skipped_ts != WT_TS_MAX || page_las->has_prepares)
         return (true);
